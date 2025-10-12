@@ -1,9 +1,3 @@
-[phases.setup]
-cmds = [
-  "export LANG=C.UTF-8",
-  "export LC_ALL=C.UTF-8"
-]
-
 [phases.install]
 cmds = [
   "pip install --no-cache-dir -r requirements.txt"
