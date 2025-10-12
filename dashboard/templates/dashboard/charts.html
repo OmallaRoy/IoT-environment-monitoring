@@ -1,0 +1,601 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Environmental Charts - Smart Environment System{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-2"><i class="fas fa-chart-line text-primary"></i> Environmental Data Visualization</h2>
+        <p class="text-muted">Live sensor data and comfort zone analysis</p>
+    </div>
+</div>
+
+<!-- Alert System -->
+<div id="alerts-container" class="mb-4">
+    <!-- Alerts will appear here dynamically -->
+</div>
+
+<!-- Loading Spinner -->
+<div id="chart-loading" class="text-center py-4">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading chart data...</span>
+    </div>
+    <p class="text-muted mt-2">Loading comfort zone analysis...</p>
+</div>
+
+<!-- Main Environmental Charts -->
+<div class="row mb-4">
+    <!-- Temperature Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title text-primary mb-1">
+                    <i class="fas fa-thermometer-half me-2"></i>Temperature Monitoring
+                </h5>
+                <p class="text-muted small mb-0">Real-time temperature trends in °C</p>
+            </div>
+            <div class="card-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe style="border: none; border-radius: 0 0 8px 8px;" 
+                            src="https://thingspeak.com/channels/3091064/charts/4?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=&type=line&xaxis=Time&yaxis=Temperature+%28%C2%B0C%29"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Humidity Chart -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title text-info mb-1">
+                    <i class="fas fa-tint me-2"></i>Humidity Monitoring
+                </h5>
+                <p class="text-muted small mb-0">Real-time humidity trends in %</p>
+            </div>
+            <div class="card-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe style="border: none; border-radius: 0 0 8px 8px;" 
+                            src="https://thingspeak.com/channels/3091064/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=&type=line&xaxis=Time&yaxis=Relative+Humidity+%28%25%29"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Motion Counts Chart -->
+<div class="row mb-4">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title text-warning mb-1">
+                    <i class="fas fa-running me-2"></i>Motion Detection
+                </h5>
+                <p class="text-muted small mb-0">Real-time motion activity counts</p>
+            </div>
+            <div class="card-body p-0">
+                <div class="ratio ratio-16x9">
+                    <iframe style="border: none; border-radius: 0 0 8px 8px;" 
+                            src="https://thingspeak.com/channels/3091064/charts/3?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=&type=line&xaxis=Time&yaxis=Motion+Count"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comfort Zone Analysis (Custom Chart.js) -->
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom-0 pb-0">
+                <h5 class="card-title text-success mb-1">
+                    <i class="fas fa-home me-2"></i>Comfort Zone Analysis
+                </h5>
+                <p class="text-muted small mb-0">Temperature comfort zones with real-time status</p>
+            </div>
+            <div class="card-body">
+                <div id="chart-container">
+                    <canvas id="comfortZoneChart" height="250"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <span class="badge bg-success p-2">Comfort Zone<br>22°C - 26°C</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="badge bg-warning p-2">Warning Zone<br>18°C - 22°C / 26°C - 30°C</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="badge bg-danger p-2">Critical Zone<br>&lt;18°C / &gt;30°C</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Information -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h6 class="mb-2"><i class="fas fa-sync-alt text-primary me-2"></i>Real-time Updates</h6>
+                        <p class="mb-0 small text-muted">All charts update automatically when new sensor data is received. Comfort zone analysis updates every 2 minutes.</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="mt-2">
+                            <span class="badge bg-success me-2"><i class="fas fa-check-circle me-1"></i>Live</span>
+                            <span class="badge bg-info"><i class="fas fa-clock me-1"></i>Auto-refresh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Configuration
+const channelId = "3091064";
+const readApiKey = "RIJH231PEMRU55M3";
+
+// Comfort Zone Definitions with better colors
+const COMFORT_ZONES = {
+    critical_low: { min: 0, max: 18, color: 'rgba(220, 53, 69, 0.2)', borderColor: 'rgba(220, 53, 69, 0.8)' },
+    warning_low: { min: 18, max: 22, color: 'rgba(255, 193, 7, 0.2)', borderColor: 'rgba(255, 193, 7, 0.8)' },
+    comfort: { min: 22, max: 26, color: 'rgba(40, 167, 69, 0.2)', borderColor: 'rgba(40, 167, 69, 0.8)' },
+    warning_high: { min: 26, max: 30, color: 'rgba(255, 193, 7, 0.2)', borderColor: 'rgba(255, 193, 7, 0.8)' },
+    critical_high: { min: 30, max: 40, color: 'rgba(220, 53, 69, 0.2)', borderColor: 'rgba(220, 53, 69, 0.8)' }
+};
+
+// Alert thresholds
+const THRESHOLDS = {
+    temperature: { 
+        min: 18, 
+        max: 30,
+        comfort_min: 22,
+        comfort_max: 26
+    },
+    humidity: { 
+        min: 40, 
+        max: 80 
+    }
+};
+
+// Alert types and styles
+const ALERT_TYPES = {
+    warning: { class: 'alert-warning', icon: 'fa-exclamation-triangle' },
+    danger: { class: 'alert-danger', icon: 'fa-exclamation-circle' },
+    info: { class: 'alert-info', icon: 'fa-info-circle' },
+    success: { class: 'alert-success', icon: 'fa-check-circle' }
+};
+
+let comfortZoneChart = null;
+
+// Show/hide loading spinner
+function showLoading(show) {
+    const loadingElement = document.getElementById('chart-loading');
+    const chartContainer = document.getElementById('chart-container');
+    if (show) {
+        loadingElement.style.display = 'block';
+        chartContainer.style.display = 'none';
+    } else {
+        loadingElement.style.display = 'none';
+        chartContainer.style.display = 'block';
+    }
+}
+
+// Fetch historical data for comfort zone analysis
+async function fetchHistoricalData() {
+    try {
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readApiKey}&results=20`; // Reduced to 20 for cleaner chart
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.feeds && data.feeds.length > 0) {
+            return data.feeds;
+        }
+        return [];
+    } catch (error) {
+        console.error('Error fetching historical data:', error);
+        showError('Failed to load chart data. Please try again later.');
+        return [];
+    }
+}
+
+// Format data for comfort zone chart - SIMPLIFIED
+function formatComfortZoneData(feeds) {
+    const timestamps = [];
+    const temperatures = [];
+
+    // Process feeds in chronological order
+    const sortedFeeds = feeds.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    
+    sortedFeeds.forEach((feed, index) => {
+        if (feed.created_at && feed.field4) {
+            const date = new Date(feed.created_at);
+            // Show time in HH:MM format for cleaner labels
+            const formattedTime = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            timestamps.push(formattedTime);
+            
+            const temp = parseFloat(feed.field4);
+            // Validate temperature data
+            if (!isNaN(temp) && temp >= 0 && temp <= 50) {
+                temperatures.push(temp);
+            } else {
+                // If invalid data, use previous value or 0
+                temperatures.push(temperatures[index - 1] || 0);
+            }
+        }
+    });
+
+    return { timestamps, temperatures };
+}
+
+// Create comfort zone chart - FIXED VERSION
+function createComfortZoneChart(timestamps, temperatures) {
+    const ctx = document.getElementById('comfortZoneChart').getContext('2d');
+    
+    // Destroy existing chart if it exists
+    if (comfortZoneChart) {
+        comfortZoneChart.destroy();
+    }
+
+    // Create a single, clean temperature dataset
+    const temperatureDataset = {
+        label: 'Temperature (°C)',
+        data: temperatures,
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+        borderWidth: 3,
+        pointBackgroundColor: temperatures.map(temp => {
+            if (temp < 18) return 'rgba(220, 53, 69, 1)';
+            if (temp < 22) return 'rgba(255, 193, 7, 1)';
+            if (temp <= 26) return 'rgba(40, 167, 69, 1)';
+            if (temp <= 30) return 'rgba(255, 193, 7, 1)';
+            return 'rgba(220, 53, 69, 1)';
+        }),
+        pointBorderColor: 'rgba(255, 255, 255, 1)',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: false,
+        tension: 0.4,
+        segment: {
+            borderColor: ctx => {
+                const value = ctx.p0.parsed.y;
+                if (value < 18) return 'rgba(220, 53, 69, 1)';
+                if (value < 22) return 'rgba(255, 193, 7, 1)';
+                if (value <= 26) return 'rgba(40, 167, 69, 1)';
+                if (value <= 30) return 'rgba(255, 193, 7, 1)';
+                return 'rgba(220, 53, 69, 1)';
+            }
+        }
+    };
+
+    comfortZoneChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [temperatureDataset]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 15
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: 'rgba(0, 0, 0, 0.1)',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed.y;
+                            let zone = '';
+                            if (value < 18) zone = ' (Critical Low)';
+                            else if (value < 22) zone = ' (Warning Low)';
+                            else if (value <= 26) zone = ' (Comfort)';
+                            else if (value <= 30) zone = ' (Warning High)';
+                            else zone = ' (Critical High)';
+                            
+                            return `Temperature: ${value.toFixed(1)}°C${zone}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    min: 15,
+                    max: 35,
+                    title: {
+                        display: true,
+                        text: 'Temperature (°C)',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        stepSize: 5,
+                        callback: function(value) {
+                            return value + '°C';
+                        }
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time',
+                        font: {
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
+                    },
+                    ticks: {
+                        maxTicksLimit: 8,
+                        autoSkip: true,
+                        maxRotation: 0
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            animation: {
+                duration: 1000,
+                easing: 'easeOutQuart'
+            }
+        }
+    });
+
+    // Add comfort zone annotations using plugin
+    Chart.register({
+        id: 'comfortZones',
+        afterDraw: function(chart) {
+            const ctx = chart.ctx;
+            const yAxis = chart.scales.y;
+            const xAxis = chart.scales.x;
+            
+            // Draw comfort zone backgrounds
+            Object.values(COMFORT_ZONES).forEach(zone => {
+                const yTop = yAxis.getPixelForValue(zone.max);
+                const yBottom = yAxis.getPixelForValue(zone.min);
+                
+                ctx.save();
+                ctx.fillStyle = zone.color;
+                ctx.fillRect(xAxis.left, yTop, xAxis.right - xAxis.left, yBottom - yTop);
+                ctx.restore();
+            });
+        }
+    });
+}
+
+// Show error message
+function showError(message) {
+    const alertsContainer = document.getElementById('alerts-container');
+    alertsContainer.innerHTML = createAlert(message, 'danger');
+}
+
+// Update comfort zone chart
+async function updateComfortZoneChart() {
+    showLoading(true);
+    try {
+        const historicalData = await fetchHistoricalData();
+        if (historicalData.length > 0) {
+            const chartData = formatComfortZoneData(historicalData);
+            if (chartData.temperatures.length > 0) {
+                createComfortZoneChart(chartData.timestamps, chartData.temperatures);
+            } else {
+                showError('No valid temperature data available for chart.');
+            }
+        } else {
+            showError('No historical data available for comfort zone analysis.');
+        }
+    } catch (error) {
+        console.error('Error updating comfort zone chart:', error);
+        showError('Failed to update comfort zone chart. Please check your connection.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Fetch latest data from ThingSpeak for alerts
+async function fetchLatestData() {
+    try {
+        const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readApiKey}&results=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.feeds && data.feeds.length > 0) {
+            return data.feeds[0];
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return null;
+    }
+}
+
+// Create alert element
+function createAlert(message, type = 'warning') {
+    const alertConfig = ALERT_TYPES[type] || ALERT_TYPES.warning;
+    
+    return `
+        <div class="alert ${alertConfig.class} alert-dismissible fade show mb-3" role="alert">
+            <i class="fas ${alertConfig.icon} me-2"></i>
+            <strong>${message}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+}
+
+// Check thresholds and show alerts
+async function checkThresholds() {
+    const latestData = await fetchLatestData();
+    const alertsContainer = document.getElementById('alerts-container');
+    
+    if (!latestData) {
+        alertsContainer.innerHTML = createAlert('Unable to fetch latest sensor data. Please check your connection.', 'info');
+        return;
+    }
+
+    const temp = parseFloat(latestData.field4) || 0;
+    const humidity = parseFloat(latestData.field2) || 0;
+    const motion = parseInt(latestData.field3) || 0;
+    
+    let alerts = [];
+
+    // Check temperature thresholds with comfort zones
+    if (temp < THRESHOLDS.temperature.min) {
+        alerts.push(createAlert(`Temperature is critically low: ${temp.toFixed(1)}°C (Minimum: ${THRESHOLDS.temperature.min}°C)`, 'danger'));
+    } else if (temp < THRESHOLDS.temperature.comfort_min) {
+        alerts.push(createAlert(`Temperature is below comfort zone: ${temp.toFixed(1)}°C (Comfort: ${THRESHOLDS.temperature.comfort_min}-${THRESHOLDS.temperature.comfort_max}°C)`, 'warning'));
+    } else if (temp > THRESHOLDS.temperature.comfort_max && temp <= THRESHOLDS.temperature.max) {
+        alerts.push(createAlert(`Temperature is above comfort zone: ${temp.toFixed(1)}°C (Comfort: ${THRESHOLDS.temperature.comfort_min}-${THRESHOLDS.temperature.comfort_max}°C)`, 'warning'));
+    } else if (temp > THRESHOLDS.temperature.max) {
+        alerts.push(createAlert(`Temperature is critically high: ${temp.toFixed(1)}°C (Maximum: ${THRESHOLDS.temperature.max}°C)`, 'danger'));
+    }
+
+    // Check humidity thresholds
+    if (humidity < THRESHOLDS.humidity.min) {
+        alerts.push(createAlert(`Humidity is low: ${humidity.toFixed(1)}% (Minimum: ${THRESHOLDS.humidity.min}%)`, 'warning'));
+    } else if (humidity > THRESHOLDS.humidity.max) {
+        alerts.push(createAlert(`Humidity is high: ${humidity.toFixed(1)}% (Maximum: ${THRESHOLDS.humidity.max}%)`, 'warning'));
+    }
+
+    // Check motion activity
+    if (motion > 10) {
+        alerts.push(createAlert(`High motion activity detected: ${motion} movements in last period`, 'info'));
+    }
+
+    // Display alerts
+    if (alerts.length > 0) {
+        alertsContainer.innerHTML = alerts.join('');
+    } else {
+        // Show all good message if no alerts
+        const comfortMessage = temp >= THRESHOLDS.temperature.comfort_min && temp <= THRESHOLDS.temperature.comfort_max 
+            ? "in the optimal comfort zone" 
+            : "within acceptable ranges";
+            
+        alertsContainer.innerHTML = createAlert(
+            `All environmental parameters are ${comfortMessage}. Temperature: ${temp.toFixed(1)}°C, Humidity: ${humidity.toFixed(1)}%`, 
+            'success'
+        );
+    }
+
+    // Show browser notification for critical alerts
+    if (alerts.some(alert => alert.includes('alert-danger')) && "Notification" in window && Notification.permission === "granted") {
+        new Notification("Environmental Alert", { 
+            body: "Critical environmental condition detected! Check dashboard for details."
+        });
+    }
+}
+
+// Refresh ThingSpeak charts
+function refreshThingSpeakCharts() {
+    document.querySelectorAll('iframe').forEach(iframe => {
+        if (iframe.src.includes('thingspeak.com/channels')) {
+            iframe.src = iframe.src;
+        }
+    });
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize comfort zone chart
+    updateComfortZoneChart();
+    
+    // Check thresholds immediately
+    checkThresholds();
+    
+    // Set up intervals
+    setInterval(checkThresholds, 120000); // Check alerts every 2 minutes
+    setInterval(updateComfortZoneChart, 120000); // Update comfort zone every 2 minutes
+    setInterval(refreshThingSpeakCharts, 300000); // Refresh ThingSpeak charts every 5 minutes
+    
+    // Request notification permission
+    if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+    }
+});
+</script>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+}
+
+.alert {
+    border: none;
+    border-left: 4px solid;
+    border-radius: 8px;
+}
+
+.alert-warning {
+    border-left-color: #ffc107;
+    background-color: #fffbf0;
+}
+
+.alert-danger {
+    border-left-color: #dc3545;
+    background-color: #fdf2f2;
+}
+
+.alert-success {
+    border-left-color: #198754;
+    background-color: #f0f9f4;
+}
+
+.alert-info {
+    border-left-color: #0dcaf0;
+    background-color: #f0fdff;
+}
+
+.badge {
+    font-size: 0.75rem;
+    font-weight: normal;
+}
+
+#chart-loading {
+    display: none;
+}
+
+/* Ensure chart container has proper dimensions */
+#chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+</style>
+{% endblock %}
