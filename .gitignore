@@ -20,7 +20,6 @@ __pycache__/
 
 # Large data files
 *.csv
-*.joblib
 *.pkl
 *.h5
 *.model
