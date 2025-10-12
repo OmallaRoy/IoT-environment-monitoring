@@ -160,7 +160,7 @@ ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1
 
 # Add Railway domain if running on Railway
 if RAILWAY_ENV:
-    ALLOWED_HOSTS.extend(['.railway.app', 'localhost', '127.0.0.1'])
+    ALLOWED_HOSTS.extend(['.railway.app','.railway.app', 'localhost', '127.0.0.1'])
 
 # Application definition
 INSTALLED_APPS = [
