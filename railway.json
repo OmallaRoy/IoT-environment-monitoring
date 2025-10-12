@@ -1,6 +1,11 @@
 {
-  "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE"
+    "builder": "python",
+    "buildCommand": "pip install -r requirements.txt"
+  },
+  "deploy": {
+    "startCommand": "gunicorn iot_dashboard.wsgi:application --bind 0.0.0.0:$PORT",
+    "healthcheckPath": "/",
+    "restartPolicyType": "onFailure"
   }
 }
