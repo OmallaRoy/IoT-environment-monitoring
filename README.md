@@ -1,1 +1,2 @@
-This is an IoT environment monitoring project that monitors the temperature,humidity,motion counts which are collected from sensors then sent over to the cloud(things speak) for analytics and the analytics monitored over the web app
+This is an IoT environment monitoring project that monitors the temperature,humidity,motion counts which are collected from sensors then sent over to the cloud(things speak) for analytics and the analytics monitored over the web app.
+The web interface was created via django,and integrated with the machine learning models that were trained for predictive analysis on temperature and humidity and deployed via render
