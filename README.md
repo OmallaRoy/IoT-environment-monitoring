@@ -1,0 +1,1 @@
+This is an IoT environment monitoring project that monitors the temperature,humidity,motion counts which are collected from sensors then sent over to the cloud(things speak) for analytics and the analytics monitored over the web app
